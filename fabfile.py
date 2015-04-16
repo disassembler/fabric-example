@@ -11,50 +11,56 @@ import yaml
 import fabric
 
 workspace           = '/tmp/work'
-config_dir          = '/opt/fabric/config/'
-env.app_dir         = '/opt/application'
-env.virtual_env_dir = '/opt/virtualenvs/application'
-env.activate        = 'source ' + env.virtual_env_dir + '/bin/activate'
-env.app_repo        = 'https://github.com:disassembler/fabric-example.git'
-env.app_name        = 'fabric-example'
+config_dir          = '/Users/sam/scratch/fabric-example/config'
+app_dir         = '/opt/application'
+virtual_env_dir = '/opt/virtualenvs/application'
+activate        = 'source ' + virtual_env_dir + '/bin/activate'
+app_repo        = 'https://github.com/disassembler/fabric-example.git'
+app_name        = 'fabric-example'
 
 @_contextmanager
 def virtualenv():
-    with prefix(env.activate):
+    with prefix(activate):
         yield
 
 def loadenv(environment = ''):
     """Loads an environment config file for role definitions"""
-    with open(config_dir + environment + '.yaml', 'r') as f:
+    with open(config_dir + '/' + environment + '.yml', 'r') as f:
         env.config = yaml.load(f)
         env.roledefs = env.config['roledefs']
+        env.user = env.config['user']
+        env.password = env.config['password']
 
 @roles('application')
 def setup():
     """Sets up our application virtualenv"""
-    if not exists(env.virtual_env_dir):
-        run('virtualenv ' + env.virtual_env_dir)
-    if not exists(env.app_dir + '/builds'):
-        run('mkdir -p ' + env.app_dir + '/builds')
+    if not exists(virtual_env_dir):
+        sudo('mkdir -p ' + virtual_env_dir)
+        sudo('chown -R ' + env.user + ' ' + virtual_env_dir)
+        run('virtualenv ' + virtual_env_dir)
+    if not exists(app_dir + '/builds'):
+        sudo('mkdir -p ' + app_dir + '/builds')
+        sudo('chown -R ' + env.user + ' ' + app_dir)
 
 @roles('application')
 def deploy(version='master'):
-    """Deploys payment code to application server"""
-    if not exists(env.app_dir):
+    """Deploys code to application server"""
+    if not exists(app_dir):
         setup()
-    with lcd(env.workspace):
-        local('rm -rf *.tar.gz ' + env.app_name)
-        local('/usr/bin/git clone ' + env.app_repo env.app_name)
-        env.release = time.strftime('%Y%m%d%H%M%S')
-        with lcd(env.app_name):
+    local('mkdir -p ' + workspace)
+    with lcd(workspace):
+        local('rm -rf *.tar.gz ' + app_name)
+        local('/usr/bin/git clone ' + app_repo + ' ' + app_name)
+        release = time.strftime('%Y%m%d%H%M%S')
+        with lcd(app_name):
             local('git checkout ' + version)
-            local('git archive --format=tar ' + version + ' | gzip > ../application-' + env.release + '.tar.gz')
-        put('application-' + env.release + '.tar.gz', '/tmp/')
-    run('mkdir -p ' + env.app_dir + '/builds/' + env.release)
-    with cd(env.app_dir + '/builds/' + env.release):
-        run('tar -zxvf /tmp/payment-' + env.release + '.tar.gz')
-    run('rm ' + env.app_dir + '/current')
-    run('ln -sf ' + env.app_dir + '/builds/' + env.release + ' ' + env.app_dir + '/current')
-    with cd(env.app_dir + '/current'):
+            local('git archive --format=tar ' + version + ' | gzip > ../application-' + release + '.tar.gz')
+        put('application-' + release + '.tar.gz', '/tmp/')
+    run('mkdir -p ' + app_dir + '/builds/' + release)
+    with cd(app_dir + '/builds/' + release):
+        run('tar -zxvf /tmp/application-' + release + '.tar.gz')
+    run('rm -f ' + app_dir + '/current')
+    run('ln -sf ' + app_dir + '/builds/' + release + ' ' + app_dir + '/current')
+    with cd(app_dir + '/current'):
         with virtualenv():
             run('pip install -r requirements.txt')

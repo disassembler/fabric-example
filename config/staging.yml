@@ -1,0 +1,8 @@
+# Role definitions for fabric
+roledefs:
+  application:
+    - '10.211.55.17'
+
+# Set to ssh user/password. Can be used for login as well as sudo.
+user: vagrant
+password: vagrant
