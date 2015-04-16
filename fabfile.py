@@ -63,4 +63,4 @@ def deploy(version='master'):
     run('ln -sf ' + app_dir + '/builds/' + release + ' ' + app_dir + '/current')
     with cd(app_dir + '/current'):
         with virtualenv():
-            run('pip install -r requirements.txt')
+            run('pip install -q -U -r requirements.txt')
