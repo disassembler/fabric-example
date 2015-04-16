@@ -58,7 +58,7 @@ def deploy(version='master'):
         put('application-' + release + '.tar.gz', '/tmp/')
     run('mkdir -p ' + app_dir + '/builds/' + release)
     with cd(app_dir + '/builds/' + release):
-        run('tar -zxvf /tmp/application-' + release + '.tar.gz')
+        run('tar -zxf /tmp/application-' + release + '.tar.gz')
     run('rm -f ' + app_dir + '/current')
     run('ln -sf ' + app_dir + '/builds/' + release + ' ' + app_dir + '/current')
     with cd(app_dir + '/current'):
