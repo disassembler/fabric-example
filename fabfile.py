@@ -15,6 +15,8 @@ config_dir          = '/opt/fabric/config/'
 env.app_dir         = '/opt/application'
 env.virtual_env_dir = '/opt/virtualenvs/application'
 env.activate        = 'source ' + env.virtual_env_dir + '/bin/activate'
+env.app_repo        = 'https://github.com:disassembler/fabric-example.git'
+env.app_name        = 'fabric-example'
 
 @_contextmanager
 def virtualenv():
@@ -41,10 +43,10 @@ def deploy(version='master'):
     if not exists(env.app_dir):
         setup()
     with lcd(env.workspace):
-        local('rm -rf fabric-example *.tar.gz')
-        local('/usr/bin/git clone https://github.com:disassembler/fabric-examples.git')
+        local('rm -rf *.tar.gz ' + env.app_name)
+        local('/usr/bin/git clone ' + env.app_repo env.app_name)
         env.release = time.strftime('%Y%m%d%H%M%S')
-        with lcd('fabric-examples'):
+        with lcd(env.app_name):
             local('git checkout ' + version)
             local('git archive --format=tar ' + version + ' | gzip > ../application-' + env.release + '.tar.gz')
         put('application-' + env.release + '.tar.gz', '/tmp/')
